@@ -118,14 +118,13 @@ function processMessage(sessionId, userAnswer) {
     } else {
         const currentStageInfo = dialogueTree[session.currentStage];
         if (!currentStageInfo) {
-            // Handle error case where stage is not found
-            delete sessions[sessionId]; // Reset session
+            
+            delete sessions[sessionId]; 
             return { error: "An error occurred, please start over." };
         }
 
         session.history[session.currentStage] = {
-            question: currentStageInfo.question, // This might be undefined for placeholder stages, which is fine
-            answer: userAnswer
+            question: currentStageInfo.question, 
         };
 
         const nextStageKey = currentStageInfo.next(userAnswer);
@@ -134,13 +133,11 @@ function processMessage(sessionId, userAnswer) {
 
     let newStageInfo = dialogueTree[session.currentStage];
 
-    // Check if the current stage is a "service" stage that generates the next one dynamically
     if (newStageInfo.generateNextStage) {
         const dynamicStage = newStageInfo.generateNextStage(session.history);
-        session.currentStage = dynamicStage.nextStage; // Move session to the actual next stage
+        session.currentStage = dynamicStage.nextStage;
         
-        // Temporarily store the generated question in the history for placeholder stages
-        dialogueTree[session.currentStage].question = dynamicStage.question;
+       dialogueTree[session.currentStage].question = dynamicStage.question;
 
         return {
             sessionId: session.sessionId,

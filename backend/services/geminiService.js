@@ -30,10 +30,10 @@ const generateChatResponse = async (contents, currentCode, changeRequest) => {
       parts: [{ text: SYSTEM_PROMPT }],
     },
     generationConfig: {
-        temperature: 0.7, // Controls randomness. Lower is more predictable.
+        temperature: 0.7, 
         topK: 1,
         topP: 1,
-        maxOutputTokens: 8192, // Increased token limit for code generation
+        maxOutputTokens: 8192,
     },
   });
 
