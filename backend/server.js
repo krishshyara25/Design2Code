@@ -3,7 +3,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/errorHandler');
-// const designRoutes = require('./routes/promptRoute');
 const chatRoutes = require('./routes/chatRoute');
 const generationRoutes = require('./routes/generationRoute'); 
 
@@ -18,7 +17,6 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }));
 
-// app.use('/api/design', designRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/generate', generationRoutes); 
 
