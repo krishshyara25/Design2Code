@@ -11,7 +11,7 @@ import ImpactTile from '../components/ImpactTile';
 import ThemeToggleTile from '../components/ThemeToggleTile';
 import FooterTile from '../components/FooterTile';
 import LoadingSpinner from '../components/LoadingSpinner';
-import RealisticRobot from './RealisticRobot'; // ✅ Import the robot component
+import RealisticRobot from './RealisticRobot';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger);
@@ -90,7 +90,6 @@ const LandingPage = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <ParticleBackground />
       
-      {/* Stickers Button in Top Right Corner */}
       <Link to="/stickers" className="fixed top-4 right-4 z-50">
         <motion.button 
           className="btn-cyber text-sm px-4 py-2 font-semibold rounded-lg"
@@ -101,11 +100,9 @@ const LandingPage = () => {
         </motion.button>
       </Link>
 
-      {/* === REALISTIC ROBOT - Positioned on Right Side === */}
       <div className="fixed top-1/3 right-12 z-20 hidden lg:block w-[300px] h-[300px] pointer-events-none">
         <RealisticRobot />
       </div>
-      {/* ================================================ */}
 
       <section 
         ref={heroRef}
@@ -200,7 +197,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Floating Background Orbs */}
       <div className="fixed top-20 left-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse pointer-events-none" />
       <div className="fixed bottom-20 right-20 w-80 h-80 bg-secondary/5 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
       <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/3 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '2s' }} />
