@@ -1,8 +1,7 @@
-// src/pages/CreatePage.tsx
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
-import { Zap, Upload as UploadIcon, Pencil, Image as ImageIcon, ArrowLeft, Check } from 'lucide-react';
+import { Zap, Upload as UploadIcon, Pencil, Image as ImageIcon, ArrowLeft, Check, Eye } from 'lucide-react';
 import ParticleBackground from '../components/ParticleBackground';
 import LivePreview from '../components/LivePreview';
 
@@ -48,6 +47,9 @@ const CreatePage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isLoadingCode, setIsLoadingCode] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -71,27 +73,188 @@ const CreatePage = () => {
 
   // --- Step 1: Generate from Prompt ---
   const handleGenerateFromPrompt = () => {
-    const generated = `// Generated React component from prompt: "${prompt}"
-import React from 'react';
-
-const GeneratedComponent = () => {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center p-6 glass-card max-w-lg">
-        <h1 className="text-3xl font-bold text-primary mb-4">${prompt}</h1>
-        <p className="text-muted-foreground mb-6">AI-generated UI based on your description</p>
-        <button className="btn-cyber">Get Started</button>
-      </div>
-    </div>
-  );
-};
-
-export default GeneratedComponent;`;
+    const generated = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generated from Prompt</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      max-width: 600px;
+      width: 90%;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      color: #e2e8f0;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 2rem; }
+      p { font-size: 1rem; }
+      .container { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${prompt}</h1>
+    <p>AI-generated UI based on your description</p>
+    <button>Get Started</button>
+  </div>
+</body>
+</html>`;
     setGeneratedCode(generated);
+    setErrorMessage(null);
     setStep('prompt');
   };
 
-  // --- Step 2: Upload Image ---
+  // --- Step 2: Upload Image and Generate Code ---
+  const generateCodeFromImage = async (file: File) => {
+    setIsLoadingCode(true);
+    setErrorMessage(null);
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/upload/image-to-code', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.code) {
+        setGeneratedCode(data.code);
+      } else {
+        throw new Error('No code returned from the server');
+      }
+    } catch (error) {
+      console.error('Error generating code:', error);
+      setErrorMessage(error.message || 'Failed to generate code from image. Please try again.');
+      // Fallback code
+      setGeneratedCode(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error Generating Code</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      max-width: 600px;
+      width: 90%;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      color: #e2e8f0;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 2rem; }
+      p { font-size: 1rem; }
+      .container { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="${URL.createObjectURL(file)}" alt="Uploaded Design">
+    <h1>Generated UI</h1>
+    <p>AI failed to generate code. Edit this fallback.</p>
+    <button>Deploy</button>
+  </div>
+</body>
+</html>`);
+    } finally {
+      setIsLoadingCode(false);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -102,58 +265,28 @@ export default GeneratedComponent;`;
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const files = Array.from(e.dataTransfer.files);
     const imageFile = files.find(file => file.type.startsWith('image/'));
     if (imageFile) {
       setUploadedFile(imageFile);
-      const generated = `// Generated React component from image: ${imageFile.name}
-import React from 'react';
-
-const GeneratedComponent = () => {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center p-6 glass-card max-w-lg">
-        <img src="${URL.createObjectURL(imageFile)}" alt="Uploaded Design" className="max-w-full h-auto mb-4 rounded-lg" />
-        <h1 className="text-3xl font-bold text-primary mb-4">Generated UI</h1>
-        <p className="text-muted-foreground mb-6">AI-generated code from your design</p>
-        <button className="btn-cyber">Deploy</button>
-      </div>
-    </div>
-  );
-};
-
-export default GeneratedComponent;`;
-      setGeneratedCode(generated);
+      await generateCodeFromImage(imageFile);
       setStep('upload');
+    } else {
+      setErrorMessage('Please upload a valid image file (PNG or JPEG).');
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setUploadedFile(file);
-      const generated = `// Generated React component from image: ${file.name}
-import React from 'react';
-
-const GeneratedComponent = () => {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center p-6 glass-card max-w-lg">
-        <img src="${URL.createObjectURL(file)}" alt="Uploaded Design" className="max-w-full h-auto mb-4 rounded-lg" />
-        <h1 className="text-3xl font-bold text-primary mb-4">Generated UI</h1>
-        <p className="text-muted-foreground mb-6">AI-generated code from your design</p>
-        <button className="btn-cyber">Deploy</button>
-      </div>
-    </div>
-  );
-};
-
-export default GeneratedComponent;`;
-      setGeneratedCode(generated);
+      await generateCodeFromImage(file);
       setStep('upload');
+    } else {
+      setErrorMessage('Please select a valid image file (PNG or JPEG).');
     }
   };
 
@@ -164,24 +297,83 @@ export default GeneratedComponent;`;
   };
 
   const handleTemplateSelect = (template: typeof mockTemplates[0]) => {
-    const generated = `// Generated from selected template: ${template.name}
-import React from 'react';
-
-const GeneratedComponent = () => {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center p-6 glass-card max-w-lg">
-        <img src="${template.preview}" alt="${template.name}" className="max-w-full h-auto mb-4 rounded-lg" />
-        <h1 className="text-3xl font-bold text-primary mb-4">${template.name}</h1>
-        <p className="text-muted-foreground mb-6">Customize this template further.</p>
-        <button className="btn-cyber">Edit Template</button>
-      </div>
-    </div>
-  );
-};
-
-export default GeneratedComponent;`;
+    const generated = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${template.name}</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      max-width: 600px;
+      width: 90%;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      color: #e2e8f0;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 2rem; }
+      p { font-size: 1rem; }
+      .container { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="${template.preview}" alt="${template.name}">
+    <h1>${template.name}</h1>
+    <p>Customize this template further.</p>
+    <button>Edit Template</button>
+  </div>
+</body>
+</html>`;
     setGeneratedCode(generated);
+    setErrorMessage(null);
     setStep('prompt'); // Reuse preview area
   };
 
@@ -221,7 +413,6 @@ export default GeneratedComponent;`;
         {/* Selection Grid */}
         {step === 'select' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* Option 1: Prompt */}
             <motion.div
               className="glass-card p-8 text-center cursor-pointer hover:scale-105 transition-transform"
               whileHover={{ y: -6 }}
@@ -237,7 +428,6 @@ export default GeneratedComponent;`;
               <div className="btn-cyber inline-flex">Start Typing</div>
             </motion.div>
 
-            {/* Option 2: Upload */}
             <motion.div
               className="glass-card p-8 text-center cursor-pointer hover:scale-105 transition-transform"
               whileHover={{ y: -6 }}
@@ -253,7 +443,6 @@ export default GeneratedComponent;`;
               <div className="btn-cyber inline-flex">Upload Design</div>
             </motion.div>
 
-            {/* Option 3: Whiteboard */}
             <motion.div
               className="glass-card p-8 text-center cursor-pointer hover:scale-105 transition-transform"
               whileHover={{ y: -6 }}
@@ -278,8 +467,8 @@ export default GeneratedComponent;`;
               Generate from Prompt
             </h2>
             <p className="text-muted-foreground mb-4">
-                Describe your design idea to generate a live preview.
-              </p>
+              Describe your design idea to generate a live preview.
+            </p>
             <textarea
               className="w-full h-40 p-4 border border-border rounded-lg bg-muted/20 text-foreground placeholder-muted-foreground resize-none"
               value={prompt}
@@ -331,16 +520,18 @@ export default GeneratedComponent;`;
                 <div className="text-center">
                   <UploadIcon className="w-12 h-12 text-primary mx-auto mb-2" />
                   <p className="font-semibold mb-2">Drop image here</p>
-                  <p className="text-sm text-muted-foreground">or click to browse</p>
+                  <p className="text-sm text-muted-foreground">or click to browse (PNG/JPEG)</p>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg"
                     onChange={handleFileSelect}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
                 </div>
               )}
             </div>
+            {isLoadingCode && <p className="text-center mt-4 text-primary">Generating code...</p>}
+            {errorMessage && <p className="text-center mt-4 text-red-500">{errorMessage}</p>}
           </div>
         )}
 
@@ -405,19 +596,43 @@ export default GeneratedComponent;`;
           </div>
         )}
 
-        {/* Live Preview & Code */}
-        {(step === 'prompt' || step === 'upload') && generatedCode && (
+        {/* Live Preview & Code Editor */}
+        {generatedCode && (
           <div className="glass-card p-8 border border-accent/30">
-            <h2 className="font-orbitron font-bold fluid-text-2xl text-gradient mb-6">
-              Live Preview & Code
-            </h2>
-            <div className="flex flex-col gap-6">
-              <LivePreview code={generatedCode} uploadedFile={uploadedFile} />
-              <div className="glass-card p-4 border border-primary/30">
-                <h3 className="font-semibold text-primary mb-3">Generated Code</h3>
-                <pre className="whitespace-pre-wrap text-foreground text-sm font-mono bg-muted/20 p-4 rounded-lg">
-                  {generatedCode}
-                </pre>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-orbitron font-bold fluid-text-2xl text-gradient">
+                Live Preview & Code Editor
+              </h2>
+              {uploadedFile && (
+                <motion.button
+                  className="flex items-center gap-2 text-primary btn-cyber px-4 py-2"
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => setShowImagePreview(!showImagePreview)}
+                >
+                  <Eye className="w-5 h-5" />
+                  {showImagePreview ? 'Hide Image' : 'Show Image'}
+                </motion.button>
+              )}
+            </div>
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 border border-border rounded-lg overflow-hidden">
+                {showImagePreview && uploadedFile ? (
+                  <img
+                    src={URL.createObjectURL(uploadedFile)}
+                    alt="Uploaded Design"
+                    className="w-full h-auto max-h-[500px] object-contain"
+                  />
+                ) : (
+                  <LivePreview code={generatedCode} />
+                )}
+              </div>
+              <div className="flex-1 glass-card p-4 border border-primary/30">
+                <h3 className="font-semibold text-primary mb-3">Edit Generated Code</h3>
+                <textarea
+                  className="w-full h-96 p-4 border border-border rounded-lg bg-muted/20 text-foreground placeholder-muted-foreground resize-y font-mono text-sm"
+                  value={generatedCode}
+                  onChange={(e) => setGeneratedCode(e.target.value)}
+                />
               </div>
             </div>
           </div>
